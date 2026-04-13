@@ -35,29 +35,42 @@ class AuthController extends Controller
             'action' => 'login'
         ]);
         return redirect('/dashboard');
-    }
+        }
 
-    public function register(Request $request) {
+        public function register(Request $request)
+        {
+            $request->validate([
+                'userId' => 'required|email:rfc,dns',
+                'password' => 'required|min:6'
+            ]);
 
-    $user = User::create([
-        'userId' => $request->userId,
-        'password' => Hash::make($request->password)
-    ]);
+            //  manual duplicate check
+            if (User::where('userId', $request->userId)->exists()) {
+                return back()->with('error', 'User already exists');
+            }
 
-    AuditLog::create([
-        'user_id' => $user->id,
-        'action' => 'register'
-    ]);
+            $user = User::create([
+                'userId' => $request->userId,
+                'password' => Hash::make($request->password)
+            ]);
 
-    return redirect('/');
-    }
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'register'
+            ]);
+
+            return redirect('/');
+        }
 
     public function dashboard() {
         if (!session('user_id')) {
             return redirect('/');
         }
+        // log the dashboard access
+        $user = User::find(session('user_id'));
+        $logs = AuditLog::where('user_id', $user->id)->get();
 
-        return view('dashboard');
+        return view('dashboard', compact('user', 'logs'));
     }
 
     public function logout() {
