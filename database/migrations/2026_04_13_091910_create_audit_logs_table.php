@@ -8,17 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('userId')->unique();
-            $table->string('password');
-            $table->timestamps();
-            $table->timestamp('last_login')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->string('action');
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('audit_logs');
     }
 };

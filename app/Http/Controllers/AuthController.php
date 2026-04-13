@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Models\AuditLog;
 
 class AuthController extends Controller
 {
@@ -28,17 +29,27 @@ class AuthController extends Controller
         // update last login
         $user->last_login = now();
         $user->save();
-
+        // log the login action
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'login'
+        ]);
         return redirect('/dashboard');
     }
 
     public function register(Request $request) {
-        User::create([
-            'userId' => $request->userId,
-            'password' => Hash::make($request->password)
-        ]);
 
-        return redirect('/');
+    $user = User::create([
+        'userId' => $request->userId,
+        'password' => Hash::make($request->password)
+    ]);
+
+    AuditLog::create([
+        'user_id' => $user->id,
+        'action' => 'register'
+    ]);
+
+    return redirect('/');
     }
 
     public function dashboard() {
@@ -51,6 +62,11 @@ class AuthController extends Controller
 
     public function logout() {
         session()->flush();
+        // log the logout action
+        AuditLog::create([
+            'user_id' => session('user_id'),
+            'action' => 'logout'
+        ]);
         return redirect('/');
     }
 }
