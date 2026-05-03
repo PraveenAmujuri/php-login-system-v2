@@ -18,6 +18,10 @@ class AuthController extends Controller
     }
 
     public function login(Request $request) {
+        $request->validate([
+            'userId' => 'required|email:rfc,dns',
+            'password' => 'required'
+        ]);
         $user = User::where('userId', $request->userId)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -32,7 +36,9 @@ class AuthController extends Controller
         // log the login action
         AuditLog::create([
             'user_id' => $user->id,
-            'action' => 'login'
+            'action' => 'login',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent')
         ]);
         return redirect('/dashboard');
         }
@@ -48,15 +54,18 @@ class AuthController extends Controller
             if (User::where('userId', $request->userId)->exists()) {
                 return back()->with('error', 'User already exists');
             }
-
+            // create user
             $user = User::create([
                 'userId' => $request->userId,
-                'password' => Hash::make($request->password)
+                'password' => Hash::make($request->password),
+                'status' => 'active'
             ]);
-
+            // log the registration action
             AuditLog::create([
                 'user_id' => $user->id,
-                'action' => 'register'
+                'action' => 'register',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->header('User-Agent')
             ]);
 
             return redirect('/');
@@ -74,12 +83,16 @@ class AuthController extends Controller
     }
 
     public function logout() {
-        session()->flush();
-        // log the logout action
+        $userId = session('user_id');
+
         AuditLog::create([
-            'user_id' => session('user_id'),
-            'action' => 'logout'
+            'user_id' => $userId,
+            'action' => 'logout',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent')
         ]);
+
+        session()->flush();
         return redirect('/');
     }
 }
