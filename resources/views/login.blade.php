@@ -36,6 +36,7 @@
             @endif
 
             <form method="POST" action="/login">
+                <input type="hidden" name="reactivate" id="reactivateFlag">
                 @csrf
 
                 <div class="input-group">
@@ -79,6 +80,18 @@ function togglePassword() {
     const input = document.getElementById('password');
     input.type = input.type === 'password' ? 'text' : 'password';
 }
+
+// Reactivate confirmation
+document.addEventListener("DOMContentLoaded", function () {
+
+    @if(session('confirm_reactivate'))
+        if (confirm("Your account is deactivated. Reactivate and login?")) {
+            document.getElementById('reactivateFlag').value = 'yes';
+            document.querySelector("form").submit();
+        }
+    @endif
+
+});
 </script>
 
 </body>

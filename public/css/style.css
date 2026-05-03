@@ -308,3 +308,11 @@
             accent-color: #4f46e5;
             cursor: pointer;
         }
+
+        .logout-btn.danger::before {
+            background: #ef4444; /* red */
+        }
+
+        .logout-btn.danger:hover {
+            border-color: #ef4444;
+        }

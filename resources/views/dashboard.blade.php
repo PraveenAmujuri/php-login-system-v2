@@ -130,6 +130,13 @@
                 <a href="/logout" class="logout-btn">
                     <span>Logout</span>
                 </a>
+                <form method="POST" action="/deactivate" style="margin-top:15px;">
+                    @csrf
+                    <button type="submit" class="logout-btn danger"
+                        onclick="return confirm('Are you sure you want to deactivate your account? You can restore it within 30 days.')">
+                        <span>Deactivate Account</span>
+                    </button>
+                </form>
 
             </div>
 

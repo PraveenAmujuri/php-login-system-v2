@@ -11,3 +11,5 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/dashboard', [AuthController::class, 'dashboard']);
 Route::get('/logout', [AuthController::class, 'logout']);
+
+Route::post('/deactivate', [AuthController::class, 'deactivate']);

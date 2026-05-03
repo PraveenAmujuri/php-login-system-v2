@@ -33,21 +33,41 @@ class AuthController extends Controller
     }
 
     public function login(Request $request) {
+
+        // validate input
         $request->validate([
             'userId' => 'required|email:rfc,dns',
             'password' => 'required'
         ]);
+
+        // find user by email
         $user = User::where('userId', $request->userId)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()->with('error', 'Invalid credentials');
         }
 
-        session(['user_id' => $user->id]);
+        // check if account is inactive (FIRST LOGIN ATTEMPT)
+        if ($user->status === 'inactive' && !$request->has('reactivate')) {
 
-        // update last login
+            // check if more than 30 days passed
+            if ($user->deactivated_at) {
+                $days = now()->diffInDays($user->deactivated_at);
+
+                if ($days > 30) {
+                    return back()->with('error', 'Account permanently deleted after 30 days.');
+                }
+            }
+
+            // STOP login and ask confirmation popup
+            return back()->with('confirm_reactivate', true)->withInput();
+        }
+
+        // login user (only after confirmation OR normal user)
+        session(['user_id' => $user->id]);
         $user->last_login = now();
-        // handle remember me
+
+        // remember me functionality
         if ($request->has('remember')) {
             $token = Str::random(60);
             $user->remember_token = $token;
@@ -55,17 +75,25 @@ class AuthController extends Controller
             Cookie::queue('remember_token', $token, 60 * 24 * 30);
         }
 
-        $user->save(); // save the user to update last login and remember token
-        // log the login action
+        // if user confirmed → reactivate account
+        if ($user->status === 'inactive' && $request->has('reactivate')) {
+            $user->status = 'active';
+            $user->deactivated_at = null;
+        }
+
+        $user->save();
+
+        //  login activity
         AuditLog::create([
             'user_id' => $user->id,
             'action' => 'login',
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent')
         ]);
-        return redirect('/dashboard');
-        }
 
+        return redirect('/dashboard')->with('success', 'Login successful');
+    }
+    
     public function register(Request $request)
     {
         $request->validate([
@@ -92,6 +120,41 @@ class AuthController extends Controller
 
         return redirect('/');
     }
+
+    public function deactivate(Request $request)
+    {
+        $user = User::find(session('user_id'));
+
+        if (!$user) {
+            return redirect('/');
+        }
+
+        // pdate account status
+        $user->status = 'inactive';
+        $user->deactivated_at = now();
+
+        // remove remember token
+        $user->remember_token = null;
+
+        $user->save();
+
+        // log action
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'deactivate',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent')
+        ]);
+
+        // clear session
+        session()->flush();
+
+        // delete cookie
+        Cookie::queue(Cookie::forget('remember_token'));
+
+        return redirect('/')->with('error', 'Account deactivated. You can login within 30 days.');
+    }
+
     public function dashboard() {
         if (!session('user_id')) {
             return redirect('/');
