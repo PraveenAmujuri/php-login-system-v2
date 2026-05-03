@@ -287,3 +287,24 @@
             color: #374151;
             text-align: center;  
         }
+        .remember-group {
+            display: flex;
+            justify-content: center;  
+            margin-top: 15px;
+        }
+
+        .remember-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+        .remember-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }

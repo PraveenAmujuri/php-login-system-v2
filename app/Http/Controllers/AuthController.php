@@ -3,13 +3,28 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cookie;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Models\AuditLog;
 
+
 class AuthController extends Controller
 {
     public function showLogin() {
+        // check for remember me cookie
+        $token = request()->cookie('remember_token');
+        // if token exists and session doesn't have user_id, try to log in
+        if ($token && !session()->has('user_id')) {
+            $user = User::where('remember_token', $token)->first();
+
+            if ($user) {
+                session(['user_id' => $user->id]);
+                return redirect('/dashboard');
+            }
+        }
+
         return view('login');
     }
 
@@ -32,7 +47,15 @@ class AuthController extends Controller
 
         // update last login
         $user->last_login = now();
-        $user->save();
+        // handle remember me
+        if ($request->has('remember')) {
+            $token = Str::random(60);
+            $user->remember_token = $token;
+
+            Cookie::queue('remember_token', $token, 60 * 24 * 30);
+        }
+
+        $user->save(); // save the user to update last login and remember token
         // log the login action
         AuditLog::create([
             'user_id' => $user->id,
@@ -43,34 +66,28 @@ class AuthController extends Controller
         return redirect('/dashboard');
         }
 
-        public function register(Request $request)
-        {
-            $request->validate([
-                'userId' => 'required|email:rfc,dns',
-                'password' => 'required|min:6'
-            ]);
+    public function register(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|email:rfc,dns|unique:users,userId',
+            'password' => 'required|min:6'
+        ]);
 
-            //  manual duplicate check
-            if (User::where('userId', $request->userId)->exists()) {
-                return back()->with('error', 'User already exists');
-            }
-            // create user
-            $user = User::create([
-                'userId' => $request->userId,
-                'password' => Hash::make($request->password),
-                'status' => 'active'
-            ]);
-            // log the registration action
-            AuditLog::create([
-                'user_id' => $user->id,
-                'action' => 'register',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent')
-            ]);
+        $user = User::create([
+            'userId' => $request->userId,
+            'password' => Hash::make($request->password),
+            'status' => 'active'
+        ]);
 
-            return redirect('/');
-        }
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'register',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent')
+        ]);
 
+        return redirect('/');
+    }
     public function dashboard() {
         if (!session('user_id')) {
             return redirect('/');
@@ -91,6 +108,15 @@ class AuthController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->header('User-Agent')
         ]);
+        $user = User::find($userId);
+
+        if ($user) {
+            $user->remember_token = null;
+            $user->save();
+        }
+
+        // delete cookie
+        Cookie::queue(Cookie::forget('remember_token'));
 
         session()->flush();
         return redirect('/');

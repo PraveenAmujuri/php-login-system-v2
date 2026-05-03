@@ -57,6 +57,12 @@
                 <button type="submit" class="submit-btn">
                     <span>Login</span>
                 </button>
+                <div class="remember-group">
+                    <label class="remember-label">
+                        <input type="checkbox" name="remember">
+                        <span>Remember Me</span>
+                    </label>
+                </div>
             </form>
         </div>
 

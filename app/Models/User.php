@@ -10,7 +10,7 @@ class User extends Model
         'userId',
         'password',
         'last_login',
-        'name',
-        'status'
+        'status',
+        'remember_token'
     ];
 }

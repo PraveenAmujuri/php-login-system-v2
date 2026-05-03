@@ -12,7 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable();
             $table->string('action');
-            $table->timestamp('created_at')->useCurrent();
+            $table->string('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamps(); 
         });
     }
 
