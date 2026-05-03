@@ -39,7 +39,10 @@
 
             <form method="POST" action="/register">
                 @csrf
-
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" name="name" placeholder="Enter your name" required>
+                </div>
                 <div class="input-group">
                     <label>Email</label>
                     <input type="email" name="userId" placeholder="Enter your email" required>

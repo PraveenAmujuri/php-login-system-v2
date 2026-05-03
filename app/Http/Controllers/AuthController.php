@@ -69,14 +69,18 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
+            'name' => 'required|string|max:100',
             'userId' => 'required|email:rfc,dns|unique:users,userId',
             'password' => 'required|min:6'
         ]);
 
         $user = User::create([
+            'name' => $request->name ?? explode('@', $request->userId)[0],
             'userId' => $request->userId,
             'password' => Hash::make($request->password),
-            'status' => 'active'
+            'status' => 'active',
+            'provider' => 'local', 
+            'email_verified_at' => now() 
         ]);
 
         AuditLog::create([

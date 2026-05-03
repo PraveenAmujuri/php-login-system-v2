@@ -11,6 +11,9 @@ class User extends Model
         'password',
         'last_login',
         'status',
-        'remember_token'
+        'remember_token',
+        'provider',              
+        'email_verified_at',     
+        'name'                   
     ];
 }

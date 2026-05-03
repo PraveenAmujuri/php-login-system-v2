@@ -114,7 +114,7 @@
                 <h2>Hello,</h2>
 
                 <p class="user-email">
-                    {{ $user->userId }}
+                    {{ $user->name }}
                 </p>
 
                 <p>Last Login: {{ $user->last_login }}</p>
